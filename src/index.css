@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-dragon-red: #c8202f;
+  --color-dragon-red-dark: #9c1522;
+  --color-dragon-navy: #163862;
+  --color-dragon-navy-dark: #0e2748;
+  --color-dragon-cream: #efe6cd;
+  --color-dragon-cream-dark: #e3d6ae;
+  --color-dragon-ink: #14213d;
+
+  --font-display: 'Segoe UI', system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--color-dragon-cream);
+  color: var(--color-dragon-ink);
+  font-family: var(--font-display);
+}
