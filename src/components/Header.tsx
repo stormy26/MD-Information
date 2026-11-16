@@ -11,7 +11,7 @@ export function Header() {
           MANILA <span className="text-dragon-red">DRAGONS</span>
         </h1>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-dragon-navy/70">
-          Team Workout Builder
+          Internal Team Website
         </p>
       </div>
     </header>
