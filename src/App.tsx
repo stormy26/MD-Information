@@ -7,6 +7,8 @@ import { useLocalStorage } from './hooks/useLocalStorage'
 import { MainNav, type Section } from './components/MainNav'
 import { LineupSection, type View} from './components/LineupSection'
 import type { CrewMember } from './data/crew'
+import type { Lineup } from './data/crew'
+import { DEFAULT_LINEUP } from './data/crew'
 
 // App: the root component. It owns the data and navigation state that several children share
 // (lifting state up), and passes it down to them as props.
@@ -31,14 +33,47 @@ function App() {
   // Crew list, saved under 'md-crew'. The initial value (the dummy member) is used ONLY when nothing is
   // saved yet; after the first run the saved data wins. Reset it via DevTools > Application > Local Storage.
   // `setCrew` is not used yet; it will be, once the add form is wired in.
-  const [crew, setCrew] = useLocalStorage<CrewMember[]>('md-crew', [
-    { id: 'c1', name: 'Alex', gender: 'F', side: 'left', age: 28, weightCategory: 'light' }])
+  // STEP 6 (wiring): once the form works, change the starting value below back to [] and clear
+  //   'md-crew' in DevTools > Application > Local Storage, because saved data wins over the start value.
+  const [crew, setCrew] = useLocalStorage<CrewMember[]>('md-crew', [])
+
+  // STEP 6 (wiring): add a handler here:
+  //   function addCrew(member: CrewMember) { setCrew([...crew, member]) }
+  //   [...crew, member] builds a NEW array (old items + the new one). Never crew.push(member):
+  //   React only re-renders when state is replaced, not mutated.
+
+  function addCrew(member: CrewMember){
+    setCrew([...crew, member])
+  }
+
+  // STEP 9B: when a crew member is removed, free their seat too. After setCrew, also call setLineup with a
+  //   new `seats` object that drops every entry whose value is that id:
+  //     Object.fromEntries(Object.entries(lineup.seats).filter(([, seatedId]) => seatedId !== id))
+  //   (`[, seatedId]` = skip the key, take only the value. Same placeholder idea as `_` earlier.)
+  //   NOTE: `lineup` and `setLineup` are declared further down in App(). A function body only runs when
+  //   called, so it can use them, but check the order if TypeScript complains.
+  function removeCrew(id: string){
+    setCrew(crew.filter(member => member.id !== id))
+    setLineup({...lineup, seats: Object.fromEntries(Object.entries(lineup.seats).filter(([, seatedId]) => seatedId !== id))})
+  }
+
+  function updateCrew(updated: CrewMember){
+    setCrew(crew.map(member => member.id === updated.id ? updated : member))
+  }
+
+  // STEP 8 (boat): add the line-up state here, next to `crew`, in the same way:
+  //   const [lineup, setLineup] = useLocalStorage<Lineup>('md-lineup', DEFAULT_LINEUP)
+  //   (import Lineup and DEFAULT_LINEUP from './data/crew'). It lives in App, like `crew`, so it survives
+  //   switching tabs and so the Summary view can read it later.
+  //   Then pass both down:  <LineupSection ... lineup={lineup} onLineupChange={setLineup} />
+  //   (setLineup can be passed directly: its type already matches (lineup: Lineup) => void.)
 
   // Navigation state. Kept here (not in the child components) so it survives switching sections:
   // a component loses its own state when it is removed from the screen.
   const [tab, setTab] = useState<Tab>('builder')       // sub-tab inside Workout
   const [section, setSection] = useState<Section>('lineup') // top-level section
   const [view, setView] = useState<View>('crew')       // sub-tab inside Line-up
+  const [lineup, setLineup] = useLocalStorage<Lineup>('md-lineup', DEFAULT_LINEUP)
 
   return (
     // min-h-screen = at least as tall as the window | bg-dragon-cream = brand cream page background
@@ -85,7 +120,18 @@ function App() {
           }
         </>
         )
-        : (<LineupSection view={view} onChange={setView} crew={crew}/>)
+        : (
+          <LineupSection
+            view={view}
+            onChange={setView}
+            crew={crew}
+            onAddCrew={addCrew}
+            onRemoveCrew={removeCrew}
+            onUpdateCrew={updateCrew}
+            lineup={lineup}
+            onLineupChange={setLineup}
+          />
+        )
       }
 
       {/* Footer: py-8 = 32px top/bottom padding | text-center = centred text | text-xs = extra small text
